@@ -5,7 +5,11 @@ export class OrderService {
     constructor(/* inject DB, logger */) {}
 
   verifyOrder(order: OrderRequest): OrderVerificationResponse {
-    // 
+    // Fetch list of warehouses having this order item
+    // Select cheapest possible combination by selecting the closest warehouse first and going to the second closest warehouse etc.
+    // Calculate possible discounts
+    // Calculate shipping costs
+    // Order validity check
     
     return {
         totalPrice: 100,
