@@ -127,6 +127,24 @@ describe('Order Service', () => {
       expect(res.shippingCost).toBe(94.58);
     });
 
+    it('should calculate shipping cost from more than one warehouse', () => {
+      // 0.0001km distance to Paris warehouse
+      // takes 245 from paris warehouse
+      // takes 1 from warsaw warehouse
+      // 695 * 150 * 0.8 + 694 * 0.365 * 1 * 0.01 + 1 * 0.365 * 1,344.2 * 0.01
+      // 83400 + 2.54 + 13.46 = 
+      const orderRequest = {deviceOrders: [{deviceCount: 695, deviceIdentifier: 1}], shippingAddress: {coordinate: {latitude: 49.009723, longitude: 2.547778}}};
+      
+      // when
+      const res = orderService.verifyOrder(orderRequest);
+
+      // then
+      expect(res.isValid).toBe(true);
+      expect(res.totalPrice).toBe(83416);
+      expect(res.discount).toBe(20850);
+      expect(res.shippingCost).toBe(16);
+    });
+
     // should return all stock from one location before going to the next location
     // should go to the next closest warehouse
     // should calcuate shipping cost for one warehouse

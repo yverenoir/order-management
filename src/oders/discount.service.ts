@@ -1,7 +1,6 @@
-import { DeviceService } from "./device.service";
 import { DeviceOrder } from "./orderRequest";
-
-const deviceService = new DeviceService();
+import * as dataProvider from './data.provider';
+import {Discount} from "./data.provider";
 
 // TODO
 // Test cases
@@ -10,10 +9,10 @@ const deviceService = new DeviceService();
 
 export class DisCountService {
     applyDiscount(deviceOrder: DeviceOrder, originalUnitPrice: number): number {
-        var totalPriceWithoutDiscount = originalUnitPrice * deviceOrder.deviceCount;
+        const totalPriceWithoutDiscount = originalUnitPrice * deviceOrder.deviceCount;
         console.log('[DiscountService] applyDiscount: totalPriceWithoutDiscount: ' + totalPriceWithoutDiscount);
 
-        const discountsForThisDevice = discounts.filter(discount => discount.deviceId==deviceOrder.deviceIdentifier);
+        const discountsForThisDevice = dataProvider.getDiscountsByDeviceId(deviceOrder.deviceIdentifier);
         console.log('[DiscountService] applyDiscount: discountsForThisDevice: ' + JSON.stringify(discountsForThisDevice));
         const discountsEligibleForOrderQuantity = discountsForThisDevice.filter(discount => discount.minimumQuantity<=deviceOrder.deviceCount);
         console.log('[DiscountService] applyDiscount: discountsEligibleForOrderQuantity: ' + JSON.stringify(discountsEligibleForOrderQuantity));
@@ -34,7 +33,7 @@ export class DisCountService {
           console.log('[DiscountService] applyDiscount: highestDiscountPerType: ' + JSON.stringify(highestDiscountPerType));
 
 
-        var totalPriceAfterDiscount = totalPriceWithoutDiscount;
+        let totalPriceAfterDiscount = totalPriceWithoutDiscount;
         highestDiscountPerType.forEach(element => {
             switch(element.type) {
                 case 1: 
@@ -50,18 +49,3 @@ export class DisCountService {
         return Math.min(totalPriceWithoutDiscount, totalPriceAfterDiscount);
     }
 }
-
-interface Discount {
-    id: number,
-    deviceId: number,
-    type: number,
-    minimumQuantity: number,
-    discount: number
-}
-
-const discounts: Discount[] = [
-    {id: 1, deviceId: 1, type: 1, minimumQuantity: 25, discount: 5},
-    {id: 2, deviceId: 1, type: 1, minimumQuantity: 50, discount: 10},
-    {id: 3, deviceId: 1, type: 1, minimumQuantity: 100, discount: 15},
-    {id: 4, deviceId: 1, type: 1, minimumQuantity: 250, discount: 20}
-]

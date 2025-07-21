@@ -41,9 +41,7 @@ export class AllocationService {
       
           result.push({
             numberTakenFromWarehouse: take,
-            // TODO: validate if rounding is needed
             distanceToCustomer: warehouse.distanceInKm,
-            // TODO: validate if rounding is needed
             shippingCost: shippingCost
           });
       

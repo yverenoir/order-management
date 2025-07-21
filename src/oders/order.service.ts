@@ -1,16 +1,15 @@
 import { AllocationService } from "./allocation.service";
-import { DeviceService } from "./device.service";
 import { DisCountService } from "./discount.service";
-import { DistanceProvider } from "./distance.provider";
+import { DistanceProvider } from "./distance.service";
 import { InventoryService } from "./inventory.service";
 import { OrderRequest } from "./orderRequest";
 import { OrderVerificationResponse } from "./orderVerificationResponse";
+import * as dataProvider from './data.provider';
 
 const inventoryService = new InventoryService();
 const distanceProvider = new DistanceProvider();
 const allocationService = new AllocationService();
 const discountService = new DisCountService();
-const deviceService = new DeviceService();
 
 export class OrderService {
     constructor(/* inject DB, logger */) {}
@@ -19,16 +18,17 @@ export class OrderService {
     * We can optimise for lowest shipping cost when we optimise for getting the maximum amount of stock from the closest warehouse
     */
   verifyOrder(order: OrderRequest): OrderVerificationResponse {
-    var totalPrice = 0;
-    var totalDisount = 0;
-    var totalShipping = 0;
-    console.log('[OrderService] order' + order.deviceOrders);
+    let totalPrice = 0;
+    let totalDiscount = 0;
+    let totalShipping = 0;
+    console.log('[OrderService] order' + JSON.stringify(order.deviceOrders));
 
     // Iterate over all device orders
     order.deviceOrders.forEach(deviceOrder => {
         // Get device information
         // TODO: handle null case
-        const device = deviceService.getDeviceById(deviceOrder.deviceIdentifier);
+        const device = dataProvider.getDeviceById(deviceOrder.deviceIdentifier);
+        console.log('[OrderService] device: ' + device);
         const unitPrice = device?.price ?? 0;
         const totalDevicePriceWithoutDiscount = unitPrice * deviceOrder.deviceCount;
         console.log('[OrderService] Total without discount: ' + totalDevicePriceWithoutDiscount);
@@ -70,18 +70,18 @@ export class OrderService {
         
         // Add individual device item order to total order
         totalPrice += priceAfterDiscount + totalShippingCost;
-        totalDisount += totalDevicePriceWithoutDiscount - priceAfterDiscount;
+        totalDiscount += totalDevicePriceWithoutDiscount - priceAfterDiscount;
         totalShipping += totalShippingCost;
     }
     );
     
     // Order validity check
-    const thresholdForShipping = (totalPrice - totalDisount) * 0.15;
+    const thresholdForShipping = (totalPrice - totalDiscount) * 0.15;
     const isValid = totalShipping <= thresholdForShipping ? true : false;
 
     return {
         totalPrice: this.roundUp(totalPrice),
-        discount: this.roundUp(totalDisount),
+        discount: this.roundUp(totalDiscount),
         shippingCost: this.roundUp(totalShipping),
         currency: "USD",
         isValid: isValid

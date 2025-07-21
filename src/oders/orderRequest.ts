@@ -1,4 +1,4 @@
-import { Coordinate } from "./distance.provider";
+import { Coordinate } from "./distance.service";
 
 export interface DeviceOrder {
     deviceIdentifier: number;
