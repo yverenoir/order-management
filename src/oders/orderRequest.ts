@@ -1,11 +1,13 @@
+import { Coordinate } from "./distance.provider";
+
 export interface DeviceOrder {
-    deviceIdentifier: string;
+    deviceIdentifier: number;
     deviceCount: number;
   }
 
+// This can be extended to exclude the actual address of the customer
 export interface ShippingAddress {
-    latitude: number;
-    longitude: number;
+    coordinate: Coordinate
   }
 
  export interface OrderRequest {

@@ -1,16 +1,13 @@
 import { Coordinate } from "./distance.provider";
 
 export class InventoryService {
-    /*
-    * Defaulting to deviceId = 1 because we only have 1 device type at the moment and the user doesn't need to know about this ID
-    */
-    fetchInventoryForDevice(deviceId: number = 1): Inventory[] {
+    fetchInventoryForDevice(deviceId: number): Inventory[] {
         // TODO: need to fetch this from DB
 
         stocks.filter(stock => stock.deviceId == deviceId);
 
         const inventories = stocks
-        .filter((stock) => stock.deviceId === 1)
+        .filter((stock) => stock.deviceId === deviceId)
         .map((stock) => {
             const warehouse = warehouses.find(w => w.id === stock.warehouseId);
             // TODO: better handling when warehouse couldn't be found
@@ -23,7 +20,7 @@ export class InventoryService {
             };
         });
 
-        console.log(inventories);
+        console.log('[Inventory Service] fetchInventoryForDevice: ' + inventories);
         
         return inventories;
     }
