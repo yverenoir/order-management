@@ -1,3 +1,12 @@
+# How to run the project
+
+Node version: v24.4.1
+```npm install```
+```npm run start```
+
+Test the project with:
+```npm test```
+
 # Assumptions
 - Total price from verifying order response is the total price after the discounts have been applied and shipping cost have been added, similar to a shopping cart overview
 - Total price = Original price x order quantity - discount + shipping cost

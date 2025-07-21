@@ -1,9 +1,51 @@
 import { OrderService } from "../src/oders/order.service";
+import * as dataProvider from '../src/oders/data.provider';
 
 const orderService = new OrderService();
 
 // TODO: extract test data into test data provider file with immutables
 describe('Order Service', () => {
+  beforeEach(() => {
+    jest.spyOn(dataProvider, 'getDeviceById').mockImplementation((id) => {
+      return { id: 1, name: 'SCOS Station P1 Pro', weightInGram: 365, currency: "USD", price: 150 };
+    });
+
+    jest.spyOn(dataProvider, 'getStocksByDeviceId').mockImplementation((id) => {
+      return [
+        {id: 1, deviceId: 1, unit: 355, warehouseId: 1},
+        {id: 2, deviceId: 1, unit: 578, warehouseId: 2},
+        {id: 3, deviceId: 1, unit: 265, warehouseId: 3},
+        {id: 4, deviceId: 1, unit: 694, warehouseId: 4},
+        {id: 5, deviceId: 1, unit: 245, warehouseId: 5},
+        {id: 6, deviceId: 1, unit: 419, warehouseId: 6},
+      ];
+    });
+
+    jest.spyOn(dataProvider, 'getWarehouseById').mockImplementation((id) => {
+      return [
+        {id: 1, name: "Los Angeles", latitude: 33.9425, longitude: -118.408056},
+        {id: 2, name: "New York", latitude: 40.639722, longitude: -73.778889},
+        {id: 3, name: "Sao Paulo", latitude: -23.435556, longitude: -46.473056},
+        {id: 4, name: "Paris", latitude: 49.009722, longitude: 2.547778},
+        {id: 5, name: "Warsaw", latitude: 52.165833, longitude: 20.967222},
+        {id: 6, name: "Hong Kong", latitude: 22.308889, longitude: 113.914444},
+      ].find((warehouse) => warehouse.id === id);
+    });
+
+    jest.spyOn(dataProvider, 'getDiscountsByDeviceId').mockImplementation((id) => {
+      return [
+        {id: 1, deviceId: 1, type: 1, minimumQuantity: 25, discount: 5},
+        {id: 2, deviceId: 1, type: 1, minimumQuantity: 50, discount: 10},
+        {id: 3, deviceId: 1, type: 1, minimumQuantity: 100, discount: 15},
+        {id: 4, deviceId: 1, type: 1, minimumQuantity: 250, discount: 20}
+      ];
+    });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   describe('verifyOrder', () => {
     it('should return unit price when only order single item', () => {
       // location is same as Paris warehouse
@@ -147,8 +189,8 @@ describe('Order Service', () => {
 
     // should return all stock from one location before going to the next location
     // should go to the next closest warehouse
-    // should calcuate shipping cost for one warehouse
-    // should calcuate shipping cost for more than one warehouse
+    // should calculate shipping cost for one warehouse
+    // should calculate shipping cost for more than one warehouse
     // should validate order as invalid if shipping cost threshold reached and with discount applied to order
 
   });
