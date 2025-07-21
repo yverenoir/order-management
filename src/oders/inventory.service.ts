@@ -1,8 +1,7 @@
 import { Coordinate } from "./distance.service";
 import * as dataProvider from './data.provider'
 
-export class InventoryService {
-    fetchInventoryForDevice(deviceId: number): Inventory[] {
+    export function fetchInventoryForDevice(deviceId: number): Inventory[] {
         const inventories = dataProvider.getStocksByDeviceId(deviceId)
         .map((stock) => {
             // TODO: change business logic so we don't have to call DB multiple times inside loop
@@ -21,9 +20,8 @@ export class InventoryService {
         
         return inventories;
     }
-}
 
-interface Inventory {
+export interface Inventory {
     deviceId: number,
     unit: number,
     warehouseId: number,

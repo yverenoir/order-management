@@ -1,15 +1,27 @@
-import { AllocationService } from "./allocation.service";
-import { DisCountService } from "./discount.service";
-import { DistanceProvider } from "./distance.service";
-import { InventoryService } from "./inventory.service";
-import { OrderRequest } from "./orderRequest";
-import { OrderVerificationResponse } from "./orderVerificationResponse";
+import {AllocatedOrder, AllocationService} from "./allocation.service";
+import {DisCountService} from "./discount.service";
+import {DeviceOrder, OrderRequest} from "./orderRequest";
+import {OrderVerificationResponse} from "./orderVerificationResponse";
 import * as dataProvider from './data.provider';
+import {calculateShippingCost} from "./shipping.service";
+import {OrderSubmissionResponse} from "./orderSubmissionResponse";
 
-const inventoryService = new InventoryService();
-const distanceProvider = new DistanceProvider();
 const allocationService = new AllocationService();
 const discountService = new DisCountService();
+
+interface OrderPriceSummary {
+    totalPrice: number;
+    totalDiscount: number;
+    totalShipping: number;
+    allocatedOrders: AllocatedOrder[];
+}
+
+interface DeviceOrderPriceSummary {
+    priceAfterDiscount: number,
+    totalDevicePriceWithoutDiscount: number,
+    totalShippingCost: number,
+    allocatedOrder: AllocatedOrder[]
+}
 
 export class OrderService {
     constructor(/* inject DB, logger */) {}
@@ -18,74 +30,103 @@ export class OrderService {
     * We can optimise for lowest shipping cost when we optimise for getting the maximum amount of stock from the closest warehouse
     */
   verifyOrder(order: OrderRequest): OrderVerificationResponse {
-    let totalPrice = 0;
-    let totalDiscount = 0;
-    let totalShipping = 0;
-    console.log('[OrderService] order' + JSON.stringify(order.deviceOrders));
+    const {totalPrice, totalDiscount, totalShipping} = this.getOrderPrices(order);
 
-    // Iterate over all device orders
-    order.deviceOrders.forEach(deviceOrder => {
-        // Get device information
-        // TODO: handle null case
-        const device = dataProvider.getDeviceById(deviceOrder.deviceIdentifier);
-        console.log('[OrderService] device: ' + device);
-        const unitPrice = device?.price ?? 0;
-        const totalDevicePriceWithoutDiscount = unitPrice * deviceOrder.deviceCount;
-        console.log('[OrderService] Total without discount: ' + totalDevicePriceWithoutDiscount);
-
-        const deviceWeight = device?.weightInGram ?? 0;
-        console.log('[OrderService] Device weight: ' + deviceWeight);
-
-        // Fetch list of warehouses having this order item
-        const inventory = inventoryService.fetchInventoryForDevice(deviceOrder.deviceIdentifier);
-        // Sort warehouses by shortest distance
-        // This works because we have a limited, small amount of warehouses and calculating the distance is not expensive either, if any of the conditions change, we need to change this mechanism
-        // TODO: extract sorting logic to allocation service and write tests
-        const sourceCoordinate = {latitude: order.shippingAddress.coordinate.latitude, longitude: order.shippingAddress.coordinate.longitude}
-        const inventoryByDistance = inventory.map(inventory => {
-            const destinationCoordinate = {latitude: inventory.warehouseCoordinate.latitude, longitude: inventory.warehouseCoordinate.longitude}
-            const distance = distanceProvider.getDistanceInKm(sourceCoordinate, destinationCoordinate);
-            return {
-                distanceInKm: distance,
-                unit: inventory.unit
-            }
-        });
-        console.log('[OrderService] distance: ' + JSON.stringify(inventoryByDistance));
-        const sortedFromClosestToFurthest = inventoryByDistance.sort((a,b) => a.distanceInKm-b.distanceInKm);
-        console.log('[OrderService] sortedFromClosestToFurthest: ' + JSON.stringify(sortedFromClosestToFurthest));
-        // Select cheapest possible combination by selecting the closest warehouse first and going to the second closest warehouse etc.
-        // For each warehouse, get maximum amount and take note of (distance to warehouse, how many units)
-        // TODO: Need to add weight of device into this!!!
-        const fulfilledUnit = allocationService.allocateUnits(sortedFromClosestToFurthest, deviceOrder.deviceCount, deviceWeight/1000);
-        console.log('[OrderService] fulfilledUnit: ' + JSON.stringify(fulfilledUnit));
-
-        // Calculate possible discounts
-        const priceAfterDiscount = discountService.applyDiscount(deviceOrder, unitPrice);
-        console.log('[OrderService] Total after discount: ' + priceAfterDiscount);
-
-        // Calculate shipping costs
-        // TODO separate concerns between allocation and shipment cost, create shipping cost service
-        const totalShippingCost = fulfilledUnit.reduce((sum, entry) => sum + entry.shippingCost, 0);
-        console.log('[OrderService] Shipping: ' + totalShippingCost);
-        
-        // Add individual device item order to total order
-        totalPrice += priceAfterDiscount + totalShippingCost;
-        totalDiscount += totalDevicePriceWithoutDiscount - priceAfterDiscount;
-        totalShipping += totalShippingCost;
-    }
-    );
-    
     // Order validity check
-    const thresholdForShipping = (totalPrice - totalDiscount) * 0.15;
-    const isValid = totalShipping <= thresholdForShipping ? true : false;
+      const isValid = this.isOrderValid(totalPrice, totalDiscount, totalShipping);
 
-    return {
+      return {
         totalPrice: this.roundUp(totalPrice),
         discount: this.roundUp(totalDiscount),
         shippingCost: this.roundUp(totalShipping),
         currency: "USD",
-        isValid: isValid
+        isValid
     };
+  }
+
+    private isOrderValid(totalPrice: number, totalDiscount: number, totalShipping: number) {
+        const thresholdForShipping = (totalPrice - totalDiscount) * 0.15;
+        return totalShipping <= thresholdForShipping;
+    }
+
+    private getOrderPrices(order: OrderRequest): OrderPriceSummary {
+        let totalPrice = 0;
+        let totalDiscount = 0;
+        let totalShipping = 0;
+        const allocatedOrders: AllocatedOrder[] = [];
+        console.log('[OrderService] order' + JSON.stringify(order.deviceOrders));
+
+        // Iterate over all device orders
+        order.deviceOrders.forEach(deviceOrder => {
+                const {
+                    priceAfterDiscount,
+                    totalDevicePriceWithoutDiscount,
+                    totalShippingCost,
+                    allocatedOrder
+                }: DeviceOrderPriceSummary = this.processDeviceOrder(order, deviceOrder);
+
+                // Add individual device item order to total order
+                totalPrice += priceAfterDiscount + totalShippingCost;
+                totalDiscount += totalDevicePriceWithoutDiscount - priceAfterDiscount;
+                totalShipping += totalShippingCost;
+                allocatedOrders.push(...allocatedOrder)
+            }
+        );
+        return {totalPrice, totalDiscount, totalShipping, allocatedOrders};
+    }
+
+    private processDeviceOrder(order: OrderRequest, deviceOrder: DeviceOrder): DeviceOrderPriceSummary {
+      // Get device information
+      // TODO: handle null case
+      const device = dataProvider.getDeviceById(deviceOrder.deviceIdentifier);
+      console.log('[OrderService] device: ' + device);
+      const unitPrice = device?.price ?? 0;
+      const totalDevicePriceWithoutDiscount = unitPrice * deviceOrder.deviceCount;
+      console.log('[OrderService] Total without discount: ' + totalDevicePriceWithoutDiscount);
+      const deviceWeightInGram = device?.weightInGram ?? 0;
+      console.log('[OrderService] Device weight: ' + deviceWeightInGram);
+
+      // Fetch list of warehouses having this order item
+        // TODO: refactor so we don't need the entire order object here
+      const allocatedOrder: AllocatedOrder[] = allocationService.allocate(order, deviceOrder, deviceWeightInGram);
+
+      // Calculate possible discounts
+      const priceAfterDiscount = discountService.applyDiscount(deviceOrder, unitPrice);
+      console.log('[OrderService] Total after discount: ' + priceAfterDiscount);
+
+      // Calculate shipping costs
+      const totalShippingCost = allocatedOrder.reduce((sum, allocatedOrder) =>
+          sum + calculateShippingCost(allocatedOrder, deviceWeightInGram), 0);
+      console.log('[OrderService] Shipping: ' + totalShippingCost);
+
+      return {
+          priceAfterDiscount,
+          totalDevicePriceWithoutDiscount,
+          totalShippingCost,
+          allocatedOrder
+      };
+  }
+
+  submitOrder(order: OrderRequest): OrderSubmissionResponse {
+        // Verify, get allocation and prices
+      const {totalPrice, totalDiscount, totalShipping, allocatedOrders} : OrderPriceSummary = this.getOrderPrices(order);
+
+      // Reject request if order is not valid
+      if (!this.isOrderValid(totalPrice, totalDiscount, totalShipping)) {
+          throw new Error("Order is not valid: shipping cost exceeds 15% of the total price after discount.");
+      }
+
+      // TODO: This should be a transaction, so that if one of the steps fails, we can roll back
+      // Reduce stock in warehouses
+        allocatedOrders.forEach(allocatedOrder => {
+            dataProvider.reduceStock(allocatedOrder.warehouseId, allocatedOrder.numberTakenFromWarehouse);
+        });
+        // Add order to the database
+      const orderId = dataProvider.addOrder(totalPrice, totalDiscount, totalShipping);
+
+      return {
+          orderId: orderId
+      };
   }
 
   roundUp(num: number) {

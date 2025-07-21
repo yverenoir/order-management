@@ -10,7 +10,6 @@ const devices: Device[] = [
     { id: 1, name: 'SCOS Station P1 Pro', weightInGram: 365, currency: "USD", price: 150 },
 ];
 
-
   interface Stock {
     id: number,
     deviceId: number,
@@ -62,6 +61,10 @@ export function getStocksByDeviceId(id: number): Stock[] {
     return stocks.filter((stock) => stock.deviceId === id);
 }
 
+export function reduceStock(warehouseId: number, stockUnits: number) {
+    // TODO: Implementation to reduce stock in the warehouse
+}
+
 export function getWarehouseById(id: number): Warehouse | null {
     // TODO: handle case when no warehouse found
     return warehouses.find(w => w.id === id) ?? null;
@@ -73,4 +76,9 @@ export function getDeviceById(id: number): Device | null {
 
 export function getDiscountsByDeviceId(id: number): Discount[] {
     return discounts.filter(discount => discount.deviceId == id);
+}
+
+export function addOrder(totalPrice: number, discount: number, shippingCost: number): number {
+      // TODO: Implementation to add order to the database
+    return 1;
 }
