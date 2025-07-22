@@ -1,13 +1,11 @@
-import {AllocatedOrder, AllocationService} from "./allocation.service";
-import {DisCountService} from "./discount.service";
+import {AllocatedOrder, allocate} from "./allocation.service";
+import {applyDiscount} from "./discount.service";
 import {DeviceOrder, OrderRequest} from "./orderRequest";
 import {OrderVerificationResponse} from "./orderVerificationResponse";
 import * as dataProvider from './data.provider';
 import {calculateShippingCost} from "./shipping.service";
 import {OrderSubmissionResponse} from "./orderSubmissionResponse";
-
-const allocationService = new AllocationService();
-const discountService = new DisCountService();
+import {roundUp} from "../common/utils";
 
 interface OrderPriceSummary {
     totalPrice: number;
@@ -23,33 +21,31 @@ interface DeviceOrderPriceSummary {
     allocatedOrder: AllocatedOrder[]
 }
 
-export class OrderService {
-    constructor(/* inject DB, logger */) {}
-
-    /*
-    * We can optimise for lowest shipping cost when we optimise for getting the maximum amount of stock from the closest warehouse
-    */
-  verifyOrder(order: OrderRequest): OrderVerificationResponse {
-    const {totalPrice, totalDiscount, totalShipping} = this.getOrderPrices(order);
+/** verifyOrder verifies the order and returns the total price, discount, shipping cost, and whether the order is valid.
+ * @param order: OrderRequest containing device orders and shipping address.
+ * returns OrderVerificationResponse containing total price, discount, shipping cost, currency, and validity of the order.
+ */
+  export function verifyOrder(order: OrderRequest): OrderVerificationResponse {
+    const {totalPrice, totalDiscount, totalShipping} = getOrderPrices(order);
 
     // Order validity check
-      const isValid = this.isOrderValid(totalPrice, totalDiscount, totalShipping);
+      const isValid = isOrderValid(totalPrice, totalDiscount, totalShipping);
 
       return {
-        totalPrice: this.roundUp(totalPrice),
-        discount: this.roundUp(totalDiscount),
-        shippingCost: this.roundUp(totalShipping),
+        totalPrice: roundUp(totalPrice),
+        discount: roundUp(totalDiscount),
+        shippingCost: roundUp(totalShipping),
         currency: "USD",
         isValid
     };
   }
 
-    private isOrderValid(totalPrice: number, totalDiscount: number, totalShipping: number) {
+    function isOrderValid(totalPrice: number, totalDiscount: number, totalShipping: number) {
         const thresholdForShipping = (totalPrice - totalDiscount) * 0.15;
         return totalShipping <= thresholdForShipping;
     }
 
-    private getOrderPrices(order: OrderRequest): OrderPriceSummary {
+    function getOrderPrices(order: OrderRequest): OrderPriceSummary {
         let totalPrice = 0;
         let totalDiscount = 0;
         let totalShipping = 0;
@@ -63,7 +59,7 @@ export class OrderService {
                     totalDevicePriceWithoutDiscount,
                     totalShippingCost,
                     allocatedOrder
-                }: DeviceOrderPriceSummary = this.processDeviceOrder(order, deviceOrder);
+                }: DeviceOrderPriceSummary = processDeviceOrder(order, deviceOrder);
 
                 // Add individual device item order to total order
                 totalPrice += priceAfterDiscount + totalShippingCost;
@@ -75,7 +71,7 @@ export class OrderService {
         return {totalPrice, totalDiscount, totalShipping, allocatedOrders};
     }
 
-    private processDeviceOrder(order: OrderRequest, deviceOrder: DeviceOrder): DeviceOrderPriceSummary {
+    function processDeviceOrder(order: OrderRequest, deviceOrder: DeviceOrder): DeviceOrderPriceSummary {
       // Get device information
       // TODO: handle null case
       const device = dataProvider.getDeviceById(deviceOrder.deviceIdentifier);
@@ -88,10 +84,10 @@ export class OrderService {
 
       // Fetch list of warehouses having this order item
         // TODO: refactor so we don't need the entire order object here
-      const allocatedOrder: AllocatedOrder[] = allocationService.allocate(order, deviceOrder, deviceWeightInGram);
+      const allocatedOrder: AllocatedOrder[] = allocate(order, deviceOrder);
 
       // Calculate possible discounts
-      const priceAfterDiscount = discountService.applyDiscount(deviceOrder, unitPrice);
+      const priceAfterDiscount = applyDiscount(deviceOrder, unitPrice);
       console.log('[OrderService] Total after discount: ' + priceAfterDiscount);
 
       // Calculate shipping costs
@@ -107,12 +103,18 @@ export class OrderService {
       };
   }
 
-  submitOrder(order: OrderRequest): OrderSubmissionResponse {
+/** Processes the order and returns the order ID.
+ * This function verifies the order, calculates the total price, discount, and shipping cost, saves the order to the database,
+ * and reduces the stock in warehouses.
+ * @param order: OrderRequest containing device orders and shipping address.
+ * @returns OrderSubmissionResponse containing the order ID.
+ */
+export function submitOrder(order: OrderRequest): OrderSubmissionResponse {
         // Verify, get allocation and prices
-      const {totalPrice, totalDiscount, totalShipping, allocatedOrders} : OrderPriceSummary = this.getOrderPrices(order);
+      const {totalPrice, totalDiscount, totalShipping, allocatedOrders} : OrderPriceSummary = getOrderPrices(order);
 
       // Reject request if order is not valid
-      if (!this.isOrderValid(totalPrice, totalDiscount, totalShipping)) {
+      if (!isOrderValid(totalPrice, totalDiscount, totalShipping)) {
           throw new Error("Order is not valid: shipping cost exceeds 15% of the total price after discount.");
       }
 
@@ -128,9 +130,3 @@ export class OrderService {
           orderId: orderId
       };
   }
-
-  roundUp(num: number) {
-    return Math.ceil(num * 100) / 100;
-  }
-  
-}

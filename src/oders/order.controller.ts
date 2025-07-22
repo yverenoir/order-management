@@ -1,11 +1,8 @@
 import { Request, Response } from 'express';
-import { OrderService } from './order.service';
+import * as orderService from './order.service';
 import { OrderRequest } from './orderRequest';
 import { OrderVerificationResponse } from './orderVerificationResponse';
 import {OrderSubmissionResponse} from "./orderSubmissionResponse";
-
-// TODO: use DI
-const orderService = new OrderService();
 
 export function verifyOrder(req: Request<OrderRequest>, res: Response<OrderVerificationResponse>) {
   const order: OrderRequest = req.body;

@@ -7,8 +7,7 @@ import {Discount} from "./data.provider";
 // 1. Highest possible discount is applied
 // 2. No discount applied
 
-export class DisCountService {
-    applyDiscount(deviceOrder: DeviceOrder, originalUnitPrice: number): number {
+    export function applyDiscount(deviceOrder: DeviceOrder, originalUnitPrice: number): number {
         const totalPriceWithoutDiscount = originalUnitPrice * deviceOrder.deviceCount;
         console.log('[DiscountService] applyDiscount: totalPriceWithoutDiscount: ' + totalPriceWithoutDiscount);
 
@@ -48,4 +47,3 @@ export class DisCountService {
 
         return Math.min(totalPriceWithoutDiscount, totalPriceAfterDiscount);
     }
-}

@@ -1,25 +1,19 @@
-import { OrderService } from "../src/oders/order.service";
+import * as orderService from "../src/oders/order.service";
 import * as dataProvider from '../src/oders/data.provider';
+import * as allocationService from "../src/oders/allocation.service";
 
-const orderService = new OrderService();
-
-// TODO: extract test data into test data provider file with immutables
 describe('Order Service', () => {
   beforeEach(() => {
-    jest.spyOn(dataProvider, 'getDeviceById').mockImplementation((id) => {
-      return { id: 1, name: 'SCOS Station P1 Pro', weightInGram: 365, currency: "USD", price: 150 };
-    });
+    jest.spyOn(dataProvider, 'getDeviceById').mockReturnValue({ id: 1, name: 'SCOS Station P1 Pro', weightInGram: 365, currency: "USD", price: 150 });
 
-    jest.spyOn(dataProvider, 'getStocksByDeviceId').mockImplementation((id) => {
-      return [
+    jest.spyOn(dataProvider, 'getStocksByDeviceId').mockReturnValue([
         {id: 1, deviceId: 1, unit: 355, warehouseId: 1},
         {id: 2, deviceId: 1, unit: 578, warehouseId: 2},
         {id: 3, deviceId: 1, unit: 265, warehouseId: 3},
         {id: 4, deviceId: 1, unit: 694, warehouseId: 4},
         {id: 5, deviceId: 1, unit: 245, warehouseId: 5},
         {id: 6, deviceId: 1, unit: 419, warehouseId: 6},
-      ];
-    });
+      ]);
 
     jest.spyOn(dataProvider, 'getWarehouseById').mockImplementation((id) => {
       return [
@@ -29,17 +23,19 @@ describe('Order Service', () => {
         {id: 4, name: "Paris", latitude: 49.009722, longitude: 2.547778},
         {id: 5, name: "Warsaw", latitude: 52.165833, longitude: 20.967222},
         {id: 6, name: "Hong Kong", latitude: 22.308889, longitude: 113.914444},
-      ].find((warehouse) => warehouse.id === id);
+      ].find((warehouse) => warehouse.id === id) ?? null;
     });
 
-    jest.spyOn(dataProvider, 'getDiscountsByDeviceId').mockImplementation((id) => {
-      return [
+    jest.spyOn(dataProvider, 'getDiscountsByDeviceId').mockReturnValue([
         {id: 1, deviceId: 1, type: 1, minimumQuantity: 25, discount: 5},
         {id: 2, deviceId: 1, type: 1, minimumQuantity: 50, discount: 10},
         {id: 3, deviceId: 1, type: 1, minimumQuantity: 100, discount: 15},
         {id: 4, deviceId: 1, type: 1, minimumQuantity: 250, discount: 20}
-      ];
-    });
+      ]);
+
+    jest.spyOn(dataProvider, 'addOrder').mockReturnValue(1);
+
+    jest.spyOn(dataProvider, 'reduceStock').mockReturnValue();
   });
 
   afterEach(() => {
@@ -47,6 +43,13 @@ describe('Order Service', () => {
   });
 
   describe('verifyOrder', () => {
+    // Test cases not covered:
+    // should return all stock from one location before going to the next location
+    // should go to the next closest warehouse
+    // should calculate shipping cost for one warehouse
+    // should calculate shipping cost for more than one warehouse
+    // should validate order as invalid if shipping cost threshold reached and with discount applied to order
+
     it('should return unit price when only order single item', () => {
       // location is same as Paris warehouse
       const orderRequest = {deviceOrders: [{deviceCount: 1, deviceIdentifier: 1}], shippingAddress: {coordinate: {latitude: 49.009722, longitude: 2.547778}}};
@@ -61,7 +64,29 @@ describe('Order Service', () => {
       expect(res.shippingCost).toBe(0.01);
     });
 
-    // TODO: parametrise tests
+    it('should call data provider to get device info', () => {
+      // location is same as Paris warehouse
+      const orderRequest = {deviceOrders: [{deviceCount: 1, deviceIdentifier: 1}], shippingAddress: {coordinate: {latitude: 49.009722, longitude: 2.547778}}};
+
+      // when
+      orderService.verifyOrder(orderRequest);
+
+      // then
+      expect(dataProvider.getDeviceById).toHaveBeenCalledWith(1);
+    });
+
+    it('should call allocation service', () => {
+      // location is same as Paris warehouse
+      const orderRequest = {deviceOrders: [{deviceCount: 1, deviceIdentifier: 1}], shippingAddress: {coordinate: {latitude: 49.009722, longitude: 2.547778}}};
+      jest.spyOn(allocationService, 'allocate').mockReturnValue([{warehouseId: 4, numberTakenFromWarehouse: 1, distanceToCustomer: 0.0001}]);
+
+      // when
+      orderService.verifyOrder(orderRequest);
+
+      // then
+      expect(allocationService.allocate).toHaveBeenCalledTimes(1);
+    });
+
     it('should return apply discount when order amount is 25', () => {
       // location is same as Paris warehouse
       const orderRequest = {deviceOrders: [{deviceCount: 25, deviceIdentifier: 1}], shippingAddress: {coordinate: {latitude: 49.009722, longitude: 2.547778}}};
@@ -76,14 +101,6 @@ describe('Order Service', () => {
       expect(res.shippingCost).toBe(0.1);
     });
 
-    // TODO: add more tests
-
-  //   const discounts: Discount[] = [
-  //     {id: 1, deviceId: 1, type: 1, minimumQuantity: 25, discount: 5},
-  //     {id: 2, deviceId: 1, type: 1, minimumQuantity: 50, discount: 10},
-  //     {id: 3, deviceId: 1, type: 1, minimumQuantity: 100, discount: 15},
-  //     {id: 4, deviceId: 1, type: 1, minimumQuantity: 250, discount: 20}
-  // ]
     it('should return apply discount when order amount is 50', () => {
       // location is same as Paris warehouse
       const orderRequest = {deviceOrders: [{deviceCount: 50, deviceIdentifier: 1}], shippingAddress: {coordinate: {latitude: 49.009722, longitude: 2.547778}}};
@@ -186,12 +203,39 @@ describe('Order Service', () => {
       expect(res.discount).toBe(20850);
       expect(res.shippingCost).toBe(16);
     });
+  });
 
-    // should return all stock from one location before going to the next location
-    // should go to the next closest warehouse
-    // should calculate shipping cost for one warehouse
-    // should calculate shipping cost for more than one warehouse
-    // should validate order as invalid if shipping cost threshold reached and with discount applied to order
+  describe('submitOrder', () => {
+    // Test cases not covered:
+    // should verify order before submitting
+    // should verify order before submitting, not submit if order is invalid
 
+    it('should submit order and reduce stock in the warehouse', () => {
+      // location is same as Paris warehouse
+      const orderRequest = {deviceOrders: [{deviceCount: 1, deviceIdentifier: 1}], shippingAddress: {coordinate: {latitude: 49.009722, longitude: 2.547778}}};
+
+      // when
+      const res = orderService.submitOrder(orderRequest);
+
+      // then
+      expect(res.orderId).toBe(1);
+        expect(dataProvider.reduceStock).toHaveBeenCalledWith(4, 1);
+        expect(dataProvider.addOrder).toHaveBeenLastCalledWith(150.01, 0, 0.01);
+    });
+
+    it('should reduce stock in multiple warehouses', () => {
+      // location is same as Paris warehouse
+      const orderRequest = {deviceOrders: [{deviceCount: 695, deviceIdentifier: 1}], shippingAddress: {coordinate: {latitude: 49.009723, longitude: 2.547778}}};
+
+      // when
+      orderService.submitOrder(orderRequest);
+
+      // then
+      expect(dataProvider.reduceStock).toHaveBeenCalledTimes(2);
+      // first warehouse
+      expect(dataProvider.reduceStock).toHaveBeenNthCalledWith(1, 4, 694);
+      // second warehouse
+      expect(dataProvider.reduceStock).toHaveBeenNthCalledWith(2, 5, 1);
+    });
   });
 });
