@@ -1,10 +1,14 @@
 # How to run the project
 
 Node version: v24.4.1
+
+Intall dependencies with:
 `npm install`
+
+Run the application with:
 `npm run start`
 
-Test the project with:
+Run the tests with:
 `npm test`
 
 # Assumptions
@@ -35,6 +39,7 @@ Test the project with:
 ## Testing
 
 - The test cases are not exhaustive and are not all strict unit tests, because for some only the dataProvider (access to the DB) is mocked, but not other dependencies. This was done due to convenience and time constraints, but in a production environment we would want to have more strict unit tests for each service and component.
+- Ideal distribution of test cases would be as many unit tests as possible, with a few integration tests on the controller layer with live QA database or a database in docker container. The unit tests should be used to cover for all edge cases for methods while mocking the dependencies and verify how often the methods have been called with which values. Integration tests can also be used for testing the business logic from the service layer while only mocking the data provider layer.
 - The test data are not easy to read and the calculation not straightforward to follow. A better way to do this is to encapsulate each test case data in a test data provider function (with immutable values) which can be reused in multiple test cases, so the test data is easier to read and follow. Example see below:
 
 ```typescript
