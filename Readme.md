@@ -23,6 +23,10 @@ Test the project with:
 
 ## Database and entity design
 - The IDs of the entities are running numbers, this makes the ID easier to read when displayed on the frontend, but it is not a good practice in production to expose running IDs as they offer easier attack surface for hackers because they can be guessed easily. We can think of using UUIDs as the identifier for the entities, but use a user-friendly ID for the frontend display.
+- The code currently doesn't use transactions when reducing the stock and creating the order. In a production environment, we should use transactions to ensure that either both operations succeed or fail together, to avoid inconsistencies in the database.
+- We also currently don't re-check if the stock is still available because we retrieve the stock data and the order creation separately and not in a transaction. The trade off of introducing a transaction is that it can lead to longer response times and locking in the database. Since this is a back office tool with no real time customer interaction, locking the table could be an option. Another option could be we introduce a order confirmation step (confirmation by warehouse) after the order submission state.
+- With the stock reduction, we pretend that the stock is gone immediately after the order is created, but in a production environment we would want to have a more sophisticated stock management system that can handle concurrent orders and stock updates, e.g. using locking. We can also consider reserving the stock in the database table instead of reducing it, so it's clear the stock is still in the warehouse, and only reduce the stock once the devices have been actually shipped and left the warehouse.
+- The order entity doesn't have any information on the customer, shipping address, payment status, order items. In a production service, we need to map this into the entity design.
 
 ## Testing
 - The test cases are not exhaustive and are not all strict unit tests, because for some only the dataProvider (access to the DB) is mocked, but not other dependencies. This was done due to convenience and time constraints, but in a production environment we would want to have more strict unit tests for each service and component.
@@ -75,3 +79,10 @@ export const testDataWithMinimumOrderAmountFromCloseByWarehouseWithNoDiscount = 
 };
 ```
 - Test parametrisation is not currently used, but should be used to avoid code duplication and improve maintainability.
+
+## Error handling
+- Exception handling right now is not provided. We should catch all custom thrown exceptions within the application. This can happen with a middleware/controller advice to transform these exceptions into a mapped http response with a proper error code and message.
+
+## Logging and monitoring
+- The service does not currently have any logging or monitoring implemented. In a production environment, we need to employ more logging for unhappy paths including useful tags, e.g. requestId, userId, orderId, request path etc., to enhance traceability. 
+- Monitoring need to be implemented for both tracking service's health and measuring performance metrics, e.g. response time, error rate, etc. We can further set up alerting for critical errors or performance issues so the team can react in time to unexpected behaviors of the service.

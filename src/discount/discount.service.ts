@@ -1,17 +1,18 @@
-import { DeviceOrder } from "./orderRequest";
-import * as dataProvider from './data.provider';
-import {Discount} from "./data.provider";
+import { DeviceOrder } from "../oder/orderRequest";
+import * as dataProvider from '../db/data.provider';
+
+import {Discount} from "./discount";
 
 // TODO
 // Test cases
 // 1. Highest possible discount is applied
 // 2. No discount applied
 
-    export function applyDiscount(deviceOrder: DeviceOrder, originalUnitPrice: number): number {
+    export async function applyDiscount(deviceOrder: DeviceOrder, originalUnitPrice: number): Promise<number> {
         const totalPriceWithoutDiscount = originalUnitPrice * deviceOrder.deviceCount;
         console.log('[DiscountService] applyDiscount: totalPriceWithoutDiscount: ' + totalPriceWithoutDiscount);
 
-        const discountsForThisDevice = dataProvider.getDiscountsByDeviceId(deviceOrder.deviceIdentifier);
+        const discountsForThisDevice = await dataProvider.getDiscountsByDeviceId(deviceOrder.deviceIdentifier);
         console.log('[DiscountService] applyDiscount: discountsForThisDevice: ' + JSON.stringify(discountsForThisDevice));
         const discountsEligibleForOrderQuantity = discountsForThisDevice.filter(discount => discount.minimumQuantity<=deviceOrder.deviceCount);
         console.log('[DiscountService] applyDiscount: discountsEligibleForOrderQuantity: ' + JSON.stringify(discountsEligibleForOrderQuantity));

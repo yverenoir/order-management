@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import orderRoutes from './oders/order.routes';
+import orderRoutes from './oder/order.routes';
 
 const app = express();
 app.use(express.json());

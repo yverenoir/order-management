@@ -1,30 +1,21 @@
-import * as inventoryService from './inventory.service';
-import * as distanceService from './distance.service';
-import {DeviceOrder, OrderRequest} from "./orderRequest";
-import {Inventory} from "./inventory.service";
-import {Coordinate} from "./distance.service";
+import * as inventoryService from '../inventory/inventory.service';
+import * as distanceService from '../shipping/distance.service';
+import {DeviceOrder, OrderRequest} from "../oder/orderRequest";
+import {Inventory} from "../inventory/inventory";
 
-interface WarehouseSupplyWithDistance {
-    unit: number;
-    distanceInKm: number;
-    warehouseId: number;
-  };
-  
-export interface AllocatedOrder {
-    numberTakenFromWarehouse: number;
-    distanceToCustomer: number;
-    warehouseId: number;
-  };
+import {Coordinate} from "../shipping/shippingAddress";
+import {AllocatedOrder} from "./allocatedOrder";
+import {WarehouseSupplyWithDistance} from "./warehouseSupplyWithDistance";
 
-    /**
+/**
      * Allocates order items from warehouses based on distance to customer and available stock.
      * @param order - The order request containing shipping address and device order details.
      * @param deviceOrder - The device order containing device identifier and count.
      * @returns An array of allocated orders with details on how many items were taken from each warehouse, distance to customer, and shipping cost.
      */
-  export function allocate(order: OrderRequest, deviceOrder: DeviceOrder): AllocatedOrder[] {
+  export async function allocate(order: OrderRequest, deviceOrder: DeviceOrder): Promise<AllocatedOrder[]> {
     // Fetch list of warehouses having this order item
-    const inventory: Inventory[] = inventoryService.fetchInventoryForDevice(deviceOrder.deviceIdentifier);
+    const inventory: Inventory[] = await inventoryService.fetchInventoryForDevice(deviceOrder.deviceIdentifier);
 
     // Calculate distance from warehouse to customer and sort warehouses by shortest distance to customer's shipping address
     const customerCoordinate: Coordinate = {latitude: order.shippingAddress.coordinate.latitude, longitude: order.shippingAddress.coordinate.longitude}
@@ -35,6 +26,7 @@ export interface AllocatedOrder {
         distanceInKm: distance,
         unit: inventory.unit,
         warehouseId: inventory.warehouseId,
+        deviceId: deviceOrder.deviceIdentifier
       }
     });
     console.log('[OrderService] distance: ' + JSON.stringify(inventoryByDistance));
@@ -43,7 +35,7 @@ export interface AllocatedOrder {
 
     // Select cheapest possible combination by selecting the closest warehouse first and going to the second-closest warehouse etc.
     // For each warehouse, allocate amount that is available in the warehouse, but not more than needed
-    const allocatedOrders : AllocatedOrder[] = allocateUnits(sortedFromClosestToFurthest, deviceOrder.deviceCount);
+    const allocatedOrders : AllocatedOrder[] = allocateUnits(sortedFromClosestToFurthest, deviceOrder.deviceCount, deviceOrder.deviceIdentifier);
     console.log('[OrderService] allocatedOrders: ' + JSON.stringify(allocatedOrders));
 
     return allocatedOrders;
@@ -55,11 +47,13 @@ export interface AllocatedOrder {
    * before moving to the next closest warehouse.
    * @param sortedUnits
    * @param quantityNeeded
+   * @param deviceId
    * @return An array of allocated orders with details on how many items were taken from each warehouse, distance to customer, and shipping cost.
    */
     function allocateUnits(
       sortedUnits: WarehouseSupplyWithDistance[],
-      quantityNeeded: number
+      quantityNeeded: number,
+      deviceId: number
     ): AllocatedOrder[] {
       const result: AllocatedOrder[] = [];
       let remaining = quantityNeeded;
@@ -72,9 +66,11 @@ export interface AllocatedOrder {
         console.log('[Allocation Service] allocateUnits: take: ' + take);
 
         result.push({
-          numberTakenFromWarehouse: take,
+          stockUnits: warehouse.unit,
+          unitsTakenFromWarehouse: take,
           distanceToCustomer: warehouse.distanceInKm,
-          warehouseId: warehouse.warehouseId
+          warehouseId: warehouse.warehouseId,
+          deviceId: deviceId
         });
 
         remaining -= take;

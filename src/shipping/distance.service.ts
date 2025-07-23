@@ -1,5 +1,7 @@
 import haversineDistance from "haversine-distance";
 
+import {Coordinate} from "./shippingAddress";
+
 // TODO
 // Test cases:
 // 1. Make sure 0 distance is returned for same coordinate
@@ -20,8 +22,3 @@ export function getDistanceInKm(source: Coordinate, destination: Coordinate) {
     return distance;
 }
 
-// TODO: extrat to its own file
-export interface Coordinate {
-    latitude: number,
-    longitude: number
-}

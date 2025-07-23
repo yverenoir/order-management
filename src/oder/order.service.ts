@@ -1,11 +1,12 @@
-import {AllocatedOrder, allocate} from "./allocation.service";
-import {applyDiscount} from "./discount.service";
+import {allocate} from "../allocation/allocation.service";
+import {applyDiscount} from "../discount/discount.service";
 import {DeviceOrder, OrderRequest} from "./orderRequest";
 import {OrderVerificationResponse} from "./orderVerificationResponse";
-import * as dataProvider from './data.provider';
-import {calculateShippingCost} from "./shipping.service";
+import * as dataProvider from '../db/data.provider';
+import {calculateShippingCost} from "../shipping/shipping.service";
 import {OrderSubmissionResponse} from "./orderSubmissionResponse";
 import {roundUp} from "../common/utils";
+import {AllocatedOrder} from "../allocation/allocatedOrder";
 
 interface OrderPriceSummary {
     totalPrice: number;
@@ -25,8 +26,8 @@ interface DeviceOrderPriceSummary {
  * @param order: OrderRequest containing device orders and shipping address.
  * returns OrderVerificationResponse containing total price, discount, shipping cost, currency, and validity of the order.
  */
-  export function verifyOrder(order: OrderRequest): OrderVerificationResponse {
-    const {totalPrice, totalDiscount, totalShipping} = getOrderPrices(order);
+  export async function verifyOrder(order: OrderRequest): Promise<OrderVerificationResponse> {
+    const {totalPrice, totalDiscount, totalShipping} = await getOrderPrices(order);
 
     // Order validity check
       const isValid = isOrderValid(totalPrice, totalDiscount, totalShipping);
@@ -45,7 +46,7 @@ interface DeviceOrderPriceSummary {
         return totalShipping <= thresholdForShipping;
     }
 
-    function getOrderPrices(order: OrderRequest): OrderPriceSummary {
+    async function getOrderPrices(order: OrderRequest): Promise<OrderPriceSummary> {
         let totalPrice = 0;
         let totalDiscount = 0;
         let totalShipping = 0;
@@ -53,13 +54,13 @@ interface DeviceOrderPriceSummary {
         console.log('[OrderService] order' + JSON.stringify(order.deviceOrders));
 
         // Iterate over all device orders
-        order.deviceOrders.forEach(deviceOrder => {
+        for (const deviceOrder of order.deviceOrders) {
                 const {
                     priceAfterDiscount,
                     totalDevicePriceWithoutDiscount,
                     totalShippingCost,
                     allocatedOrder
-                }: DeviceOrderPriceSummary = processDeviceOrder(order, deviceOrder);
+                }: DeviceOrderPriceSummary = await processDeviceOrder(order, deviceOrder);
 
                 // Add individual device item order to total order
                 totalPrice += priceAfterDiscount + totalShippingCost;
@@ -67,14 +68,12 @@ interface DeviceOrderPriceSummary {
                 totalShipping += totalShippingCost;
                 allocatedOrders.push(...allocatedOrder)
             }
-        );
         return {totalPrice, totalDiscount, totalShipping, allocatedOrders};
     }
 
-    function processDeviceOrder(order: OrderRequest, deviceOrder: DeviceOrder): DeviceOrderPriceSummary {
+    async function processDeviceOrder(order: OrderRequest, deviceOrder: DeviceOrder): Promise<DeviceOrderPriceSummary> {
       // Get device information
-      // TODO: handle null case
-      const device = dataProvider.getDeviceById(deviceOrder.deviceIdentifier);
+      const device = await dataProvider.getDeviceById(deviceOrder.deviceIdentifier);
       console.log('[OrderService] device: ' + device);
       const unitPrice = device?.price ?? 0;
       const totalDevicePriceWithoutDiscount = unitPrice * deviceOrder.deviceCount;
@@ -84,10 +83,10 @@ interface DeviceOrderPriceSummary {
 
       // Fetch list of warehouses having this order item
         // TODO: refactor so we don't need the entire order object here
-      const allocatedOrder: AllocatedOrder[] = allocate(order, deviceOrder);
+      const allocatedOrder: AllocatedOrder[] = await allocate(order, deviceOrder);
 
       // Calculate possible discounts
-      const priceAfterDiscount = applyDiscount(deviceOrder, unitPrice);
+      const priceAfterDiscount = await applyDiscount(deviceOrder, unitPrice);
       console.log('[OrderService] Total after discount: ' + priceAfterDiscount);
 
       // Calculate shipping costs
@@ -109,9 +108,9 @@ interface DeviceOrderPriceSummary {
  * @param order: OrderRequest containing device orders and shipping address.
  * @returns OrderSubmissionResponse containing the order ID.
  */
-export function submitOrder(order: OrderRequest): OrderSubmissionResponse {
+export async function submitOrder(order: OrderRequest): Promise<OrderSubmissionResponse> {
         // Verify, get allocation and prices
-      const {totalPrice, totalDiscount, totalShipping, allocatedOrders} : OrderPriceSummary = getOrderPrices(order);
+      const {totalPrice, totalDiscount, totalShipping, allocatedOrders} : OrderPriceSummary = await getOrderPrices(order);
 
       // Reject request if order is not valid
       if (!isOrderValid(totalPrice, totalDiscount, totalShipping)) {
@@ -120,11 +119,11 @@ export function submitOrder(order: OrderRequest): OrderSubmissionResponse {
 
       // TODO: This should be a transaction, so that if one of the steps fails, we can roll back
       // Reduce stock in warehouses
-        allocatedOrders.forEach(allocatedOrder => {
-            dataProvider.reduceStock(allocatedOrder.warehouseId, allocatedOrder.numberTakenFromWarehouse);
-        });
-        // Add order to the database
-      const orderId = dataProvider.addOrder(totalPrice, totalDiscount, totalShipping);
+        for (const allocatedOrder of allocatedOrders) {
+            await dataProvider.reduceStock(allocatedOrder.warehouseId, allocatedOrder.stockUnits - allocatedOrder.unitsTakenFromWarehouse, allocatedOrder.deviceId);
+        }
+    // Add order to the database
+      const orderId = await dataProvider.addOrder(totalPrice, totalDiscount, totalShipping);
 
       return {
           orderId: orderId

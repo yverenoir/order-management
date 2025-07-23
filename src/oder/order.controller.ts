@@ -4,16 +4,16 @@ import { OrderRequest } from './orderRequest';
 import { OrderVerificationResponse } from './orderVerificationResponse';
 import {OrderSubmissionResponse} from "./orderSubmissionResponse";
 
-export function verifyOrder(req: Request<OrderRequest>, res: Response<OrderVerificationResponse>) {
+export async function verifyOrder(req: Request<OrderRequest>, res: Response<OrderVerificationResponse>) {
   const order: OrderRequest = req.body;
   
-  const response = orderService.verifyOrder(order);
+  const response = await orderService.verifyOrder(order);
   res.status(200).json(response);
 }
 
-export function submitOrder(req: Request<OrderRequest>, res: Response<OrderSubmissionResponse>) {
+export async function submitOrder(req: Request<OrderRequest>, res: Response<OrderSubmissionResponse>) {
   const order: OrderRequest = req.body;
 
-  const response = orderService.submitOrder(order);
+  const response = await orderService.submitOrder(order);
   res.status(200).json(response);
 }

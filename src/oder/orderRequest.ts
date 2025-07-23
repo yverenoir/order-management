@@ -1,4 +1,4 @@
-import { Coordinate } from "./distance.service";
+import {Coordinate} from "../shipping/shippingAddress";
 
 export interface DeviceOrder {
     deviceIdentifier: number;
