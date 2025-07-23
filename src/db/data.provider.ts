@@ -25,7 +25,7 @@ export async function getStocksByDeviceId(id: number): Promise<Stock[]> {
         }});
 }
 
-export async function reduceStock(warehouseId: number, updatedStockUnits: number, deviceId: number) {
+export async function updateStock(warehouseId: number, updatedStockUnits: number, deviceId: number) {
     const updatedStock = await dbClient.updateStock(warehouseId, updatedStockUnits, deviceId);
 
     if (!updatedStock) {

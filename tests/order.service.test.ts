@@ -41,7 +41,7 @@ describe('Order Service', () => {
 
     jest.spyOn(dataProvider, 'addOrder').mockReturnValue(Promise.resolve(1));
 
-    jest.spyOn(dataProvider, 'reduceStock').mockReturnValue(Promise.resolve());
+    jest.spyOn(dataProvider, 'updateStock').mockReturnValue(Promise.resolve());
   });
 
   afterEach(() => {
@@ -228,7 +228,7 @@ describe('Order Service', () => {
 
       // then
       expect(res.orderId).toBe(1);
-        expect(dataProvider.reduceStock).toHaveBeenCalledWith(4, 1);
+        expect(dataProvider.updateStock).toHaveBeenCalledWith(4, 693, 1);
         expect(dataProvider.addOrder).toHaveBeenLastCalledWith(150.01, 0, 0.01);
     });
 
@@ -240,11 +240,11 @@ describe('Order Service', () => {
       await orderService.submitOrder(orderRequest);
 
       // then
-      expect(dataProvider.reduceStock).toHaveBeenCalledTimes(2);
+      expect(dataProvider.updateStock).toHaveBeenCalledTimes(2);
       // first warehouse
-      expect(dataProvider.reduceStock).toHaveBeenNthCalledWith(1, 4, 694);
+      expect(dataProvider.updateStock).toHaveBeenNthCalledWith(1, 4, 0, 1);
       // second warehouse
-      expect(dataProvider.reduceStock).toHaveBeenNthCalledWith(2, 5, 1);
+      expect(dataProvider.updateStock).toHaveBeenNthCalledWith(2, 5, 244, 1);
     });
   });
 });

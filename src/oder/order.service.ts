@@ -120,7 +120,7 @@ export async function submitOrder(order: OrderRequest): Promise<OrderSubmissionR
       // TODO: This should be a transaction, so that if one of the steps fails, we can roll back
       // Reduce stock in warehouses
         for (const allocatedOrder of allocatedOrders) {
-            await dataProvider.reduceStock(allocatedOrder.warehouseId, allocatedOrder.stockUnits - allocatedOrder.unitsTakenFromWarehouse, allocatedOrder.deviceId);
+            await dataProvider.updateStock(allocatedOrder.warehouseId, allocatedOrder.stockUnits - allocatedOrder.unitsTakenFromWarehouse, allocatedOrder.deviceId);
         }
     // Add order to the database
       const orderId = await dataProvider.addOrder(totalPrice, totalDiscount, totalShipping);

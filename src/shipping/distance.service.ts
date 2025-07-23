@@ -16,7 +16,6 @@ export function getDistanceInKm(source: Coordinate, destination: Coordinate) {
     const sourceCoordinate = {lat: source.latitude, lon: source.longitude};
     const destinationCoordinate = {lat: destination.latitude, lon: destination.longitude};
     const distanceInMeters = haversineDistance(sourceCoordinate, destinationCoordinate);
-    // TODO convert in safe to way KM from M
     const distance = distanceInMeters / 1000;
     console.log('[Distance Provider] getDistanceInKm: ' + distance);
     return distance;
