@@ -1,9 +1,9 @@
-import {Coordinate} from "../shipping/shippingAddress";
+import { Coordinate } from "../shipping/shippingAddress";
 
 export interface Inventory {
-    deviceId: number,
-    unit: number,
-    warehouseId: number,
-    warehouseName: string,
-    warehouseCoordinate: Coordinate
+  deviceId: number;
+  unit: number;
+  warehouseId: number;
+  warehouseName: string;
+  warehouseCoordinate: Coordinate;
 }

@@ -1,7 +1,7 @@
 export interface AllocatedOrder {
-    stockUnits: number;
-    unitsTakenFromWarehouse: number;
-    distanceToCustomer: number;
-    warehouseId: number;
-    deviceId: number;
+  stockUnits: number;
+  unitsTakenFromWarehouse: number;
+  distanceToCustomer: number;
+  warehouseId: number;
+  deviceId: number;
 }

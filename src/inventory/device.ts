@@ -1,7 +1,7 @@
 export interface Device {
-    id: number,
-    name: string,
-    weightInGram: number,
-    price: number,
-    currency: string
+  id: number;
+  name: string;
+  weightInGram: number;
+  price: number;
+  currency: string;
 }
