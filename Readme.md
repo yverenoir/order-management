@@ -112,3 +112,7 @@ export const testDataWithMinimumOrderAmountFromCloseByWarehouseWithNoDiscount =
 
 - The service does not currently have any logging or monitoring implemented. In a production environment, we need to employ more logging for unhappy paths including useful tags, e.g. requestId, userId, orderId, request path etc., to enhance traceability.
 - Monitoring need to be implemented for both tracking service's health and measuring performance metrics, e.g. response time, error rate, etc. We can further set up alerting for critical errors or performance issues so the team can react in time to unexpected behaviors of the service.
+
+## Deployment
+- For CICD pipeline set up, we can use GitHub Actions with these steps: 1. Install dependencies, 2. Run tests, 3. Build the application, 4. Deploy to a staging environment, 5. Have (manual) step to deploy to production under the condition all tests pass
+- For deployment, we can write a Dockerfile to containerize the application and deploy it to a cloud provider.
