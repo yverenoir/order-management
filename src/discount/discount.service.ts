@@ -1,4 +1,4 @@
-import { DeviceOrder } from "../oder/orderRequest";
+import { DeviceOrder } from "../order/orderRequest";
 import * as dataProvider from "../db/data.provider";
 
 import { Discount } from "./discount";

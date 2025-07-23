@@ -1,6 +1,6 @@
 import * as inventoryService from "../inventory/inventory.service";
 import * as distanceService from "../shipping/distance.service";
-import { DeviceOrder, OrderRequest } from "../oder/orderRequest";
+import { DeviceOrder, OrderRequest } from "../order/orderRequest";
 import { Inventory } from "../inventory/inventory";
 
 import { Coordinate } from "../shipping/shippingAddress";

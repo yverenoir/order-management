@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import orderRoutes from "./oder/order.routes";
+import orderRoutes from "./order/order.routes";
 
 const app = express();
 app.use(express.json());
@@ -13,6 +13,10 @@ app.get("/health", (req: Request, res: Response) => {
 
 // Register domain routes
 app.use("/orders", orderRoutes);
+
+app.get("/", (req: Request, res: Response) => {
+  res.send("Order Management API");
+});
 
 app.listen(3000, () => {
   console.log("Server running on port 3000");

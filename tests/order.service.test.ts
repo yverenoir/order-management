@@ -1,4 +1,4 @@
-import * as orderService from "../src/oder/order.service";
+import * as orderService from "../src/order/order.service";
 import * as dataProvider from "../src/db/data.provider";
 import * as allocationService from "../src/allocation/allocation.service";
 
