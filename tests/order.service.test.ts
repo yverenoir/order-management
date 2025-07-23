@@ -4,17 +4,15 @@ import * as allocationService from "../src/allocation/allocation.service";
 
 describe("Order Service", () => {
   beforeEach(() => {
-    jest
-      .spyOn(dataProvider, "getDeviceById")
-      .mockReturnValue(
-        Promise.resolve({
-          id: 1,
-          name: "SCOS Station P1 Pro",
-          weightInGram: 365,
-          currency: "USD",
-          price: 150,
-        }),
-      );
+    jest.spyOn(dataProvider, "getDeviceById").mockReturnValue(
+      Promise.resolve({
+        id: 1,
+        name: "SCOS Station P1 Pro",
+        weightInGram: 365,
+        currency: "USD",
+        price: 150,
+      }),
+    );
 
     jest.spyOn(dataProvider, "getStocksByDeviceId").mockReturnValue(
       Promise.resolve([
@@ -113,19 +111,17 @@ describe("Order Service", () => {
           coordinate: { latitude: 49.009722, longitude: 2.547778 },
         },
       };
-      jest
-        .spyOn(allocationService, "allocate")
-        .mockReturnValue(
-          Promise.resolve([
-            {
-              warehouseId: 4,
-              unitsTakenFromWarehouse: 1,
-              distanceToCustomer: 0.0001,
-              stockUnits: 10,
-              deviceId: 1,
-            },
-          ]),
-        );
+      jest.spyOn(allocationService, "allocate").mockReturnValue(
+        Promise.resolve([
+          {
+            warehouseId: 4,
+            unitsTakenFromWarehouse: 1,
+            distanceToCustomer: 0.0001,
+            stockUnits: 10,
+            deviceId: 1,
+          },
+        ]),
+      );
 
       // when
       await orderService.verifyOrder(orderRequest);
