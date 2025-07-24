@@ -32,7 +32,7 @@ export async function getDiscountByDeviceId(deviceId: number) {
   const { data, error } = await supabase
     .from("discounts")
     .select("*")
-    .eq("deviceId", deviceId);
+    .eq("device_id", deviceId);
 
   if (error) {
     console.error(
@@ -73,7 +73,7 @@ export async function getStocksByDeviceId(deviceId: number) {
   const { data, error } = await supabase
     .from("stock")
     .select("*")
-    .eq("deviceId", deviceId);
+    .eq("device_id", deviceId);
 
   if (error) {
     console.error(
@@ -99,8 +99,8 @@ export async function updateStock(
   const { data, error } = await supabase
     .from("stock")
     .update({ unit: updatedStockUnits })
-    .eq("deviceId", deviceId)
-    .eq("warehouseId", warehouseId)
+    .eq("device_id", deviceId)
+    .eq("warehouse_id", warehouseId)
     .select();
 
   if (error) {
