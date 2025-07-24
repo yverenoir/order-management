@@ -8,6 +8,12 @@ import { Coordinate } from "./shippingAddress";
 // 2. Make sure m to km conversion is happening
 // 3. Basic happy path for known distance between known coordiante pair
 
+/**
+ * Calculates the distance in kilometers between two geographical coordinates using the Haversine formula.
+ * @param source - The source coordinate with latitude and longitude.
+ * @param destination - The destination coordinate with latitude and longitude.
+ * @returns The distance in kilometers between the two coordinates.
+ */
 /*
  * Having distance calculation in its own method will allow easy exchange of business logic used for calculation,
  * in the future, it could be from a shipping provider
@@ -22,7 +28,7 @@ export function getDistanceInKm(source: Coordinate, destination: Coordinate) {
     sourceCoordinate,
     destinationCoordinate,
   );
-  const distance = distanceInMeters / 1000;
-  console.log("[Distance Provider] getDistanceInKm: " + distance);
-  return distance;
+
+  // Convert meters to kilometers
+  return distanceInMeters / 1000;
 }

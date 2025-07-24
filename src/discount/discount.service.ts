@@ -8,30 +8,25 @@ import { Discount } from "./discount";
 // 1. Highest possible discount is applied
 // 2. No discount applied
 
+/** applyDiscount calculates the total price after applying the highest applicable discount for a device order.
+ * @param deviceOrder
+ * @param originalUnitPrice
+ * @return The total price after applying the discount.
+ */
 export async function applyDiscount(
   deviceOrder: DeviceOrder,
   originalUnitPrice: number,
 ): Promise<number> {
   const totalPriceWithoutDiscount = originalUnitPrice * deviceOrder.deviceCount;
-  console.log(
-    "[DiscountService] applyDiscount: totalPriceWithoutDiscount: " +
-      totalPriceWithoutDiscount,
-  );
 
   const discountsForThisDevice = await dataProvider.getDiscountsByDeviceId(
     deviceOrder.deviceIdentifier,
   );
-  console.log(
-    "[DiscountService] applyDiscount: discountsForThisDevice: " +
-      JSON.stringify(discountsForThisDevice),
-  );
+
   const discountsEligibleForOrderQuantity = discountsForThisDevice.filter(
     (discount) => discount.minimumQuantity <= deviceOrder.deviceCount,
   );
-  console.log(
-    "[DiscountService] applyDiscount: discountsEligibleForOrderQuantity: " +
-      JSON.stringify(discountsEligibleForOrderQuantity),
-  );
+
   // Could not find applicable discount -> return not discounted total price
   if (discountsEligibleForOrderQuantity.length == 0) {
     return deviceOrder.deviceCount * originalUnitPrice;
@@ -46,25 +41,12 @@ export async function applyDiscount(
     }, new Map<number, Discount>()),
   ).map(([_, discount]) => discount);
 
-  console.log(
-    "[DiscountService] applyDiscount: highestDiscountPerType: " +
-      JSON.stringify(highestDiscountPerType),
-  );
-
   let totalPriceAfterDiscount = totalPriceWithoutDiscount;
   highestDiscountPerType.forEach((element) => {
     switch (element.type) {
       case 1:
         totalPriceAfterDiscount =
           totalPriceWithoutDiscount * (1 - element.discount / 100);
-        console.log(
-          "[DiscountService] applyDiscount: priceAfterDiscount: " +
-            JSON.stringify(element.discount),
-        );
-        console.log(
-          "[DiscountService] applyDiscount: priceAfterDiscount: " +
-            JSON.stringify(totalPriceAfterDiscount),
-        );
         break;
       default:
         throw new Error("Cannot find discount type" + element.type);

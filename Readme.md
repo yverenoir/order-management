@@ -4,6 +4,8 @@ The service is available at: https://order-management-d2eg.onrender.com
 
 The service is a Node.js + express application that provides an API for managing orders, which has two main functions: verifying orders and submitting orders. It uses TypeScript for type safety and Jest for testing.
 
+Swagger/OpenAPI documentation is available at: https://order-management-d2eg.onrender.com/api-docs/
+
 ## How to run the project
 
 Node version: v24.4.1

@@ -45,29 +45,18 @@ export async function allocate(
       };
     },
   );
-  console.log(
-    "[OrderService] distance: " + JSON.stringify(inventoryByDistance),
-  );
+
   const sortedFromClosestToFurthest = inventoryByDistance.sort(
     (a, b) => a.distanceInKm - b.distanceInKm,
-  );
-  console.log(
-    "[OrderService] sortedFromClosestToFurthest: " +
-      JSON.stringify(sortedFromClosestToFurthest),
   );
 
   // Select cheapest possible combination by selecting the closest warehouse first and going to the second-closest warehouse etc.
   // For each warehouse, allocate amount that is available in the warehouse, but not more than needed
-  const allocatedOrders: AllocatedOrder[] = allocateUnits(
+  return allocateUnits(
     sortedFromClosestToFurthest,
     deviceOrder.deviceCount,
     deviceOrder.deviceIdentifier,
   );
-  console.log(
-    "[OrderService] allocatedOrders: " + JSON.stringify(allocatedOrders),
-  );
-
-  return allocatedOrders;
 }
 
 /**
@@ -92,7 +81,6 @@ function allocateUnits(
     if (remaining <= 0) break;
 
     const take = Math.min(warehouse.unit, remaining);
-    console.log("[Allocation Service] allocateUnits: take: " + take);
 
     result.push({
       stockUnits: warehouse.unit,

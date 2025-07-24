@@ -58,7 +58,6 @@ async function getOrderPrices(order: OrderRequest): Promise<OrderPriceSummary> {
   let totalDiscount = 0;
   let totalShipping = 0;
   const allocatedOrders: AllocatedOrder[] = [];
-  console.log("[OrderService] order" + JSON.stringify(order.deviceOrders));
 
   // Iterate over all device orders
   for (const deviceOrder of order.deviceOrders) {
@@ -84,14 +83,9 @@ async function processDeviceOrder(
 ): Promise<DeviceOrderPriceSummary> {
   // Get device information
   const device = await dataProvider.getDeviceById(deviceOrder.deviceIdentifier);
-  console.log("[OrderService] device: " + device);
   const unitPrice = device?.price ?? 0;
   const totalDevicePriceWithoutDiscount = unitPrice * deviceOrder.deviceCount;
-  console.log(
-    "[OrderService] Total without discount: " + totalDevicePriceWithoutDiscount,
-  );
   const deviceWeightInGram = device?.weightInGram ?? 0;
-  console.log("[OrderService] Device weight: " + deviceWeightInGram);
 
   // Fetch list of warehouses having this order item
   // TODO: refactor so we don't need the entire order object here
@@ -99,7 +93,6 @@ async function processDeviceOrder(
 
   // Calculate possible discounts
   const priceAfterDiscount = await applyDiscount(deviceOrder, unitPrice);
-  console.log("[OrderService] Total after discount: " + priceAfterDiscount);
 
   // Calculate shipping costs
   const totalShippingCost = allocatedOrder.reduce(
@@ -107,7 +100,6 @@ async function processDeviceOrder(
       sum + calculateShippingCost(allocatedOrder, deviceWeightInGram),
     0,
   );
-  console.log("[OrderService] Shipping: " + totalShippingCost);
 
   return {
     priceAfterDiscount,

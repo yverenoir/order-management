@@ -2,6 +2,12 @@ import { AllocatedOrder } from "../allocation/allocatedOrder";
 
 export const SHIPPING_COST_PER_KG_PER_KM = 0.01;
 
+/** Calculate shipping cost based on device weight and distance to customer based on the formula:
+ * Shipping cost = weight in kg * distance in km * 0.01
+ * @param allocatedOrder
+ * @param deviceWeightInGram
+ * @return Shipping cost in USD
+ */
 export function calculateShippingCost(
   allocatedOrder: AllocatedOrder,
   deviceWeightInGram: number,
@@ -20,9 +26,5 @@ export function calculateShippingCost(
     Math.ceil(allocatedOrder.unitsTakenFromWarehouse * deviceWeightInKg),
   );
 
-  const shippingCost = weightInKg * distanceInKm * SHIPPING_COST_PER_KG_PER_KM;
-  console.log(
-    `[Shipping Service] Shipping cost for ${weightInKg}kg over ${distanceInKm}km: $${shippingCost.toFixed(2)}`,
-  );
-  return shippingCost;
+  return weightInKg * distanceInKm * SHIPPING_COST_PER_KG_PER_KM;
 }
