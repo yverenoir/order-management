@@ -19,7 +19,7 @@ Run the application with:
 Run the tests with:
 `npm test`
 
-Run DB types generation with:
+Run DB types generation with (need to be logged in via supabase):
 `npm run db:types`
 
 ## Assumptions
