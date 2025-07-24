@@ -135,7 +135,7 @@ export async function addOrder(
   const { data, error } = await supabase
     .from("orders")
     .insert({
-      totalPrice: totalPrice,
+      total_price: totalPrice,
       discount: discount,
       shipping: shippingCost,
     })
