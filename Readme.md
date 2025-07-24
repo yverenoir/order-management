@@ -1,8 +1,14 @@
-# How to run the project
+# Order management API
+
+The service is available at: https://order-management-d2eg.onrender.com
+
+The service is a Node.js + express application that provides an API for managing orders, which has two main functions: verifying orders and submitting orders. It uses TypeScript for type safety and Jest for testing.
+
+## How to run the project
 
 Node version: v24.4.1
 
-Intall dependencies with:
+Install dependencies with:
 `npm install`
 
 Run the application with:
@@ -11,7 +17,10 @@ Run the application with:
 Run the tests with:
 `npm test`
 
-# Assumptions
+Run DB types generation with:
+`npm run db:types`
+
+## Assumptions
 
 - Total price from verifying order response is the total price after the discounts have been applied and shipping cost have been added, similar to a shopping cart overview
 - Total price = Original price x order quantity - discount + shipping cost
@@ -35,6 +44,9 @@ Run the tests with:
 - We also currently don't re-check if the stock is still available because we retrieve the stock data and the order creation separately and not in a transaction. The trade off of introducing a transaction is that it can lead to longer response times and locking in the database. Since this is a back office tool with no real time customer interaction, locking the table could be an option. Another option could be we introduce a order confirmation step (confirmation by warehouse) after the order submission state.
 - With the stock reduction, we pretend that the stock is gone immediately after the order is created, but in a production environment we would want to have a more sophisticated stock management system that can handle concurrent orders and stock updates, e.g. using locking. We can also consider reserving the stock in the database table instead of reducing it, so it's clear the stock is still in the warehouse, and only reduce the stock once the devices have been actually shipped and left the warehouse.
 - The order entity doesn't have any information on the customer, shipping address, payment status, order items. In a production service, we need to map this into the entity design.
+- The data access layer is currently realised with the data provider and the db client which cover all entities of the DB. In a production service, we would want to apply the repository pattern for each entity. We can also consider using an ORM like TypeORM or Sequelize to simplify the data access layer and provide a more structured way of interacting with the database.
+- The current database is hosted on supabase.com. We use an anonymous user for data access. In production environment, we would want to use a dedicated DB role with username and password to access the database.
+- The database.types.ts file is auto-generated types from the supabase database schema.
 
 ## Testing
 
@@ -104,9 +116,10 @@ export const testDataWithMinimumOrderAmountFromCloseByWarehouseWithNoDiscount =
 
 - Test parametrisation is not currently used, but should be used to avoid code duplication and improve maintainability.
 
-## Error handling
+## Error handling and validation
 
 - Exception handling right now is not provided. We should catch all custom thrown exceptions within the application. This can happen with a middleware/controller advice to transform these exceptions into a mapped http response with a proper error code and message.
+- Request validation is not currently implemented. We should validate the request body before entering the business logic stage to ensure we fail as early as possible. Types of validation (non-exhaustive): required fields are present, value validity (e.g. coordinates are valid).
 
 ## Logging and monitoring
 
@@ -114,5 +127,14 @@ export const testDataWithMinimumOrderAmountFromCloseByWarehouseWithNoDiscount =
 - Monitoring need to be implemented for both tracking service's health and measuring performance metrics, e.g. response time, error rate, etc. We can further set up alerting for critical errors or performance issues so the team can react in time to unexpected behaviors of the service.
 
 ## Deployment
-- For CICD pipeline set up, we can use GitHub Actions with these steps: 1. Install dependencies, 2. Run tests, 3. Build the application, 4. Deploy to a staging environment, 5. Have (manual) step to deploy to production under the condition all tests pass
+- The application is currently deployed via Render.com.
+- For CI/CD pipeline set up, we can use GitHub Actions with these steps: 1. Install dependencies, 2. Run tests, 3. Build the application, 4. Deploy to a staging environment, 5. Have (manual) step to deploy to production under the condition all tests pass
 - For deployment, we can write a Dockerfile to containerize the application and deploy it to a cloud provider.
+
+## Access control and security
+- The service does not currently have any authentication or authorization implemented. This can be done with a security/auth filter in the code with strict role based access control on each endpoint. The persistence of user and role data (e.g. sales rep, warehouse staff) and permissions can be built with self-maintained DB tables or an external service can be used e.g. Cognito (AWS), Auth0.
+- The service does not have CORS enabled. This can be done with a middleware that allows only specific origins to access the service.
+
+## API design
+- The service is using REST API. This works for this case because the service is a back office tool with internal users, non-demanding UX requirements (for the FE), predictable low amount of client (FE), low complexity entities, low amount of endpoints, and expected lower change rate. If any of the conditions change, it's worth considering investing into changing to GraphQL, especially if the number of clients and change rate of features increase
+- The REST endpoints are not versioned. Is is due to the fact that the service has low change rate and predictable low amount of clients. If sticking with REST API, and the the conditions change, we can think of versioning the API with a prefix in the URL, e.g. /v1/orders/verify
