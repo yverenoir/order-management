@@ -13,15 +13,15 @@ export async function getStocksByDeviceId(id: number): Promise<Stock[]> {
   return stocks.map((stock) => {
     if (
       stock.unit == null ||
-      stock.deviceId == null ||
-      stock.warehouseId == null
+      stock.device_id == null ||
+      stock.warehouse_id == null
     ) {
       throw new Error("[Data Provider] Stock object contains null fields");
     }
     return {
       id: stock.id,
-      deviceId: stock.deviceId,
-      warehouseId: stock.warehouseId,
+      deviceId: stock.device_id,
+      warehouseId: stock.warehouse_id,
       unit: stock.unit,
     };
   });
@@ -72,7 +72,7 @@ export async function getDeviceById(id: number): Promise<Device> {
 
   if (
     device.name == null ||
-    device.weightInGram == null ||
+    device.weight_in_gram == null ||
     device.price == null ||
     device.currency == null
   ) {
@@ -82,7 +82,7 @@ export async function getDeviceById(id: number): Promise<Device> {
   return {
     id: device.id,
     name: device.name,
-    weightInGram: device.weightInGram,
+    weightInGram: device.weight_in_gram,
     price: device.price,
     currency: device.currency,
   };
@@ -95,18 +95,18 @@ export async function getDiscountsByDeviceId(id: number): Promise<Discount[]> {
 
   return discounts.map((discount) => {
     if (
-      discount.deviceId == null ||
+      discount.device_id == null ||
       discount.type == null ||
-      discount.minimumQuantity == null ||
+      discount.minimum_quantity == null ||
       discount.discount == null
     ) {
       throw new Error("[Data Provider] Discount object contains null fields");
     }
     return {
       id: discount.id,
-      deviceId: discount.deviceId,
+      deviceId: discount.device_id,
       type: discount.type,
-      minimumQuantity: discount.minimumQuantity,
+      minimumQuantity: discount.minimum_quantity,
       discount: discount.discount,
     };
   });
