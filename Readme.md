@@ -29,6 +29,16 @@ Run DB types generation with:
 - Volume discount are applied on the entire order, not on the possible shipping per warehouse
 - Shipping cost = every started km _ every started kg _ 0.01, e.g. if distance between warehouse and customer's shipping address is > 0 and < 1, we count it as 1km, same as with weight of order, if the order weight is > 0, and < 1, we count it as 1kg. Similar to DHL weight to price brackets on: https://www.dhl.de/en/privatkunden/pakete-versenden/weltweit-versenden/preise-international.html#preise
 
+## Flow of order service for order verification and submission
+
+The flow of order submission reuses part of the order verification flow before submitting the order.
+
+### Sequence diagram order verification
+![Order verification flow](order_verification_flow.png "Order verification sequence diagram")
+
+### Sequence diagram order submission
+![Order submission flow](order_submission_flow.png "Order submission sequence diagram")
+
 ## Distance service
 
 - A more accurate way to gauge shopping cost is to use the calculator API from the shipping provider, given this can be used with no or very low cost for order verification. If the shipping provider's API is not available or feasible for verification purpose, then we should build the calculator as close as the observed behavior of the shipping provider's calculation.
@@ -49,6 +59,8 @@ Run DB types generation with:
 - The data access layer is currently realised with the data provider and the db client which cover all entities of the DB. In a production service, we would want to apply the repository pattern for each entity. We can also consider using an ORM like TypeORM or Sequelize to simplify the data access layer and provide a more structured way of interacting with the database.
 - The current database is hosted on supabase.com. We use an anonymous user for data access. In production environment, we would want to use a dedicated DB role with username and password to access the database.
 - The database.types.ts file is auto-generated types from the supabase database schema.
+
+![DB schema](schema.png "DB Schema")
 
 ## Testing
 

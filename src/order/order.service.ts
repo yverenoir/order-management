@@ -82,6 +82,7 @@ async function processDeviceOrder(
   deviceOrder: DeviceOrder,
 ): Promise<DeviceOrderPriceSummary> {
   // Get device information
+  // TODO: refactor so we have a device service between orderService and dataProvider
   const device = await dataProvider.getDeviceById(deviceOrder.deviceIdentifier);
   const unitPrice = device?.price ?? 0;
   const totalDevicePriceWithoutDiscount = unitPrice * deviceOrder.deviceCount;
