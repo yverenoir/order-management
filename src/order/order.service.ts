@@ -23,8 +23,8 @@ interface DeviceOrderPriceSummary {
 }
 
 /** verifyOrder verifies the order and returns the total price, discount, shipping cost, and whether the order is valid.
- * @param order: OrderRequest containing device orders and shipping address.
  * returns OrderVerificationResponse containing total price, discount, shipping cost, currency, and validity of the order.
+ * @param order: OrderRequest containing device orders and shipping address.
  */
 export async function verifyOrder(
   order: OrderRequest,
@@ -120,8 +120,8 @@ async function processDeviceOrder(
 /** Processes the order and returns the order ID.
  * This function verifies the order, calculates the total price, discount, and shipping cost, saves the order to the database,
  * and reduces the stock in warehouses.
- * @param order: OrderRequest containing device orders and shipping address.
  * @returns OrderSubmissionResponse containing the order ID.
+ * @param order : OrderRequest containing device orders and shipping address.
  */
 export async function submitOrder(
   order: OrderRequest,
